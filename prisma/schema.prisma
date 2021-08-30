@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id      Int      @id @default(autoincrement())
+  email   String   @unique
+  name    String?
+  posts   Post[]
+  profile Profile?
+}
+
+model Post {
+  id Int @id @default(autoincrement())
+  createAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  title String @db.VarChar(255)
+  content String?
+  published Boolean @default(false)
+  author User @relation(fields: [authorId], references: [id]) // User.id
+  authorId  Int
+}
+
+model Profile {
+  id     Int     @id @default(autoincrement())
+  bio    String? 
+  user   User    @relation(fields: [userId], references: [id])
+  userId Int     @unique
+}
+
+enum FinalizeSteps {
+  UPDATE
+  CALENDAR
+  NOTIFY
+  CACHE
+  FINISH
+}
+
+enum ApprovalWorkflowEvents {
+  SUBMITTED
+  RECV
+  APPROVED
+  DENIED
+}
+
+model RequestCache {
+  id      Int      @id @default(autoincrement())
+  requestId String @unique
+  rawRep String
+  status ApprovalWorkflowEvents @default(SUBMITTED)
+  requesterEmail String
+  spreadsheetId String
+  failedTask FailedTask?
+}
+
+model FailedTask {
+  id Int @id @default(autoincrement())
+  request RequestCache? @relation(fields: [requestId], references: [id])
+  requestId Int
+  nextStep FinalizeSteps @default(UPDATE)
+}
